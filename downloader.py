@@ -20,21 +20,16 @@ class PingPong_session(requests.Session):
         self.headers.update(headers)
         self.login(username, password)
         
-        # Test fetching lecture notes from image analysis
-        # TODO: Make this into function which downloads a file and displays a progress bar
-        #os.mkdir('img')
-        #r = self.get('https://pingpong.chalmers.se/zipNode.do?node=5139402', stream=True)
-        #print('Downloading files')
-        #z = zipfile.ZipFile(io.BytesIO(r.content))
-        #z.extractall('img/') 
-        #print('Download finished')
-
         self.courses = self.get_all_course_ids()
+        [print(key, val) for key,val in self.courses.items()]
+
+        os.mkdir('courses')
+        os.chdir('courses')
 
         for course_id, course_name in self.courses.items():
             # Create folder for course
             course_name = re.sub('[\\/:*?"<>|]', '', course_name)
-            os.mkdir(course_name)
+            os.mkdir(course_id + ' ' + course_name)
             extract_path = course_name + '/'
             
             # TODO: Check if this is none
@@ -99,6 +94,9 @@ class PingPong_session(requests.Session):
 
     def download_files(self, file_ids, extract_path):
         # Calls download_file for all files in a course in separate threads
+
+        if not file_ids:
+            return
 
         # Create threads
         threads = [threading.Thread(target=self.download_file, args=(id, extract_path,)) for id in file_ids]

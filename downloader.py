@@ -11,8 +11,6 @@ import threading
 from bs4 import BeautifulSoup
 
 
-
-
 class PingPong_session(requests.Session):
     def __init__(self, username, password):
         headers = { 'user-agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 Safari/537.36' }
@@ -30,13 +28,12 @@ class PingPong_session(requests.Session):
             # Create folder for course
             course_name = re.sub('[\\/:*?"<>|]', '', course_name)
             os.mkdir(course_id + ' ' + course_name)
-            extract_path = course_name + '/'
+            extract_path = course_id + ' ' + course_name + '/'
             
-            # TODO: Check if this is none
             file_ids = self.get_file_ids(course_id)
 
             # Download files for course
-            print('Starting download for course ', course_name)
+            print('Starting download for course', course_name)
             self.download_files(file_ids, extract_path)
         
         # IDEA:
@@ -86,11 +83,18 @@ class PingPong_session(requests.Session):
 
     def download_file(self, file_id, extract_path):
         # Download a file and save as zip, then extract the zip into extract_path folder
-        print('started download of ', file_id)
+        # Wanted to add a progress bar but pingpong does not send
+        # a content-length header :(
+        MBFACTOR = float(1<<20)
+
+        print('started download of', file_id)
         r = self.get('https://pingpong.chalmers.se/zipNode.do?node=' + str(file_id), stream=True)
         z = zipfile.ZipFile(io.BytesIO(r.content))
         z.extractall(extract_path)
-        # TODO: display progress bar
+        filesize = len(r.content)/MBFACTOR
+        if z.namelist():
+            print('finished:' , str(z.namelist()[0]),
+                    'size:',"{:.2f}".format(filesize),'MB')
 
     def download_files(self, file_ids, extract_path):
         # Calls download_file for all files in a course in separate threads
@@ -100,11 +104,13 @@ class PingPong_session(requests.Session):
 
         # Create threads
         threads = [threading.Thread(target=self.download_file, args=(id, extract_path,)) for id in file_ids]
-        print('starting ', len(threads), ' downloads')
+        print('starting', len(threads), 'downloads')
         # Start threads
         [t.start() for t in threads]
         # Wait for threads to join
         [t.join() for t in threads]
+
+        print('###################')
 
     def login(self, username, password):
         # Logs user in and retrieves all nessecary cookies etc.

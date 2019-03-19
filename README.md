@@ -2,7 +2,9 @@
 A small script that downloads all of your files from Chalmers PingPong for you!
 
 ## Requirements
-python3+, bs4 and requests
+* Python3
+* bs4
+* requests
 
 ## Setup
 Set up a virtual environment or make sure that you have python3+, bs4 and
